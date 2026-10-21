@@ -1,0 +1,19 @@
+{
+  "name": "ludo-king-local-client-study",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "assets": "python3 tools/prepare.py",
+    "test": "node --test tests/*.test.mjs",
+    "test:multiplayer": "node tests/harness/two-client.mjs",
+    "test:multiplayer:four": "node tests/harness/two-client.mjs --players=4",
+    "test:visual": "node tools/check-original.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.56.0"
+  },
+  "dependencies": {
+    "socket.io": "^1.7.4"
+  }
+}

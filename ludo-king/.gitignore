@@ -1,0 +1,6 @@
+public/play/
+public/config.json
+asset-manifest.json
+test-results/
+*.log
+node_modules/

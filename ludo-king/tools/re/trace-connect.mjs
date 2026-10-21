@@ -1,0 +1,34 @@
+import {chromium} from 'playwright-core';
+const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',headless:true});
+const context=await browser.newContext({viewport:{width:1440,height:900},locale:'en-US'});
+await context.addInitScript(()=>{
+  window.__req=[];
+  const O=XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open=function(m,u,...r){window.__req.push({k:'xhr',m,u:String(u)});return O.call(this,m,u,...r);};
+  const OWS=window.WebSocket;
+  const W=function(...a){window.__req.push({k:'ws',u:String(a[0])});const ws=new OWS(...a);ws.addEventListener('open',()=>window.__req.push({k:'ws-open',u:String(a[0])}));return ws;};
+  W.prototype=OWS.prototype;window.WebSocket=W;
+  const F=window.fetch;
+  window.fetch=function(...a){window.__req.push({k:'fetch',u:String(a[0])});return F.apply(this,a);};
+});
+const page=await context.newPage();
+const errors=[],cons=[];
+page.on('pageerror',e=>errors.push(e.message));
+page.on('console',m=>cons.push(m.type()+': '+m.text().slice(0,200)));
+await page.goto('http://127.0.0.1:8788/',{waitUntil:'domcontentloaded'});
+await page.locator('#loginCloseBtn').waitFor({state:'visible',timeout:60000});
+await page.locator('#loginCloseBtn').click();
+await page.waitForTimeout(1500);
+await page.evaluate(()=>{
+  window.isUserGLoggedIn=true;
+  const cc=window.cc;let h=null;const w=n=>{if(!n||h)return;for(const x of (n._components||[])){let cn='';try{cn=cc.js.getClassName(x);}catch{}if(cn==='UIButtonHandler'){h=x;return;}}for(const ch of (n._children||[]))w(ch);};w(cc.director.getScene());
+  h.onClickOnlineMultiplayer();
+});
+await page.waitForTimeout(9000);
+const req=await page.evaluate(()=>window.__req);
+const interesting=req.filter(r=>!/\.(png|jpg|ttf|mp3|wav|plist|json|css|ico)/.test(r.u)&&!/cocos2d|settings|main\.df8f|boot|compat|layout|adsense/.test(r.u));
+console.log('NON-ASSET REQUESTS:');for(const r of interesting)console.log(' ',r.k,r.u);
+console.log('TOTAL req:',req.length);
+console.log('CONSOLE:',JSON.stringify(cons.slice(0,20)));
+console.log('ERRORS:',JSON.stringify(errors));
+await browser.close();
